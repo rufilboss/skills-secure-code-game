@@ -16,52 +16,27 @@ from collections import namedtuple
 Order = namedtuple('Order', 'id, items')
 Item = namedtuple('Item', 'type, description, amount, quantity')
 
-MAX_ORDER_AMOUNT = 1e6  # max order amount to prevent excessive values
+MAX_ORDER_AMOUNT = 1e6  # A reasonable max order amount to prevent excessive values
+EPSILON = 1e-9  # Define a small epsilon for floating-point comparison
 
 def validorder(order: Order):
-    net = 0
-    total_product_amount = 0
+    total_payments = 0
+    total_products = 0
 
     for item in order.items:
         if item.type == 'payment':
-            net += item.amount
+            total_payments += item.amount
         elif item.type == 'product':
             product_cost = item.amount * item.quantity
-            net -= product_cost
-            total_product_amount += product_cost
+            total_products += product_cost
             # Check for total amount exceeding reasonable limit
-            if total_product_amount > MAX_ORDER_AMOUNT:
+            if total_products > MAX_ORDER_AMOUNT:
                 return "Total amount payable for an order exceeded"
         else:
             return f"Invalid item type: {item.type}"
 
-    # Check for unrealistic values that might trick the system
-    if abs(net) > total_product_amount:
-        return f"Order ID: {order.id} - Payment imbalance: ${net:0.2f}"
-    
-    if net != 0:
-        return f"Order ID: {order.id} - Payment imbalance: ${net:0.2f}"
+    # Compare total payments and total products considering floating-point precision
+    if abs(total_payments - total_products) > EPSILON:
+        return f"Order ID: {order.id} - Payment imbalance: ${total_payments - total_products:0.2f}"
     else:
         return f"Order ID: {order.id} - Full payment received!"
-
-
-# from collections import namedtuple
-
-# Order = namedtuple('Order', 'id, items')
-# Item = namedtuple('Item', 'type, description, amount, quantity')
-
-# def validorder(order: Order):
-#     net = 0
-
-#     for item in order.items:
-#         if item.type == 'payment':
-#             net += item.amount
-#         elif item.type == 'product':
-#             net -= item.amount * item.quantity
-#         else:
-#             return "Invalid item type: %s" % item.type
-
-#     if net != 0:
-#         return "Order ID: %s - Payment imbalance: $%0.2f" % (order.id, net)
-#     else:
-#         return "Order ID: %s - Full payment received!" % order.id
